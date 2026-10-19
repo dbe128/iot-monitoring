@@ -2,6 +2,10 @@ package com.aldisued.iot.monitoring.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.aldisued.iot.monitoring.dto.AlertDto;
@@ -9,6 +13,7 @@ import com.aldisued.iot.monitoring.entity.Alert;
 import com.aldisued.iot.monitoring.entity.Sensor;
 import com.aldisued.iot.monitoring.entity.SensorType;
 import com.aldisued.iot.monitoring.exception.AlertNotFoundException;
+import com.aldisued.iot.monitoring.exception.SensorNotFoundException;
 import com.aldisued.iot.monitoring.repository.AlertRepository;
 import com.aldisued.iot.monitoring.repository.SensorRepository;
 import java.time.LocalDateTime;
@@ -38,6 +43,32 @@ class AlertServiceTest {
 
   @InjectMocks
   private AlertService alertService;
+
+  @Test
+  void savesAlertAndPublishesIt() {
+    Sensor sensor = new Sensor("Temperature Sensor", SensorType.TEMPERATURE);
+    AlertDto alertDto = new AlertDto(SENSOR_ID, "Too hot", TIMESTAMP);
+    when(sensorRepository.findById(SENSOR_ID)).thenReturn(Optional.of(sensor));
+    when(alertRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+    Alert saved = alertService.saveAlert(alertDto);
+
+    assertThat(saved.getSensor()).isSameAs(sensor);
+    assertThat(saved.getMessage()).isEqualTo("Too hot");
+    assertThat(saved.getTimestamp()).isEqualTo(TIMESTAMP);
+    verify(kafkaTemplate).send("alerts", alertDto);
+  }
+
+  @Test
+  void neitherSavesNorPublishesAlertOfUnknownSensor() {
+    when(sensorRepository.findById(SENSOR_ID)).thenReturn(Optional.empty());
+
+    assertThatThrownBy(() -> alertService.saveAlert(new AlertDto(SENSOR_ID, "Too hot", TIMESTAMP)))
+        .isInstanceOf(SensorNotFoundException.class);
+
+    verify(alertRepository, never()).save(any());
+    verifyNoInteractions(kafkaTemplate);
+  }
 
   @Test
   void returnsLatestAlertOfSensor() {
