@@ -60,6 +60,26 @@ class SensorReadingRepositoryTest extends IntegrationTestBase {
         .isEmpty();
   }
 
+  @Test
+  void findsValuesOfGivenTypeWithinInclusiveRangeOrderedByTimestamp() {
+    save(temperatureSensor, 3.0, TO);
+    save(temperatureSensor, 1.0, FROM);
+    save(temperatureSensor, 2.0, FROM.plusHours(12));
+    save(temperatureSensor, 100.0, FROM.minusSeconds(1));
+    save(temperatureSensor, 100.0, TO.plusSeconds(1));
+    save(humiditySensor, 0.5, FROM.plusHours(1));
+
+    assertThat(sensorReadingRepository.findValues(SensorType.TEMPERATURE, FROM, TO))
+        .containsExactly(1.0, 2.0, 3.0);
+  }
+
+  @Test
+  void findsNoValuesWhenNoReadingsInRange() {
+    save(humiditySensor, 0.5, FROM.plusHours(1));
+
+    assertThat(sensorReadingRepository.findValues(SensorType.TEMPERATURE, FROM, TO)).isEmpty();
+  }
+
   private void save(Sensor sensor, double value, LocalDateTime timestamp) {
     sensorReadingRepository.save(new SensorReading(value, timestamp, sensor));
   }
