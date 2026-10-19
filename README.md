@@ -28,5 +28,17 @@ Please complete the assignment **within one week**.
 
 ---
 
-## 📂 Project Structure (expected)
+## Running
+
+```bash
+docker compose up -d      # PostgreSQL + Kafka
+./mvnw spring-boot:run    # http://localhost:8080
+./mvnw test               # needs Docker (Testcontainers)
+```
+
+Kafka topics: `sensor-reading` and `sensor-alerts` (in), `alerts` (out), JSON payloads.
+
+Notes:
+- `AlertService.saveAlert` is not transactional on purpose: the alert is committed before it is published to Kafka.
+- Testcontainers is bumped to 1.21.4, as 1.21.3 does not work with Docker Engine 29+.
 
