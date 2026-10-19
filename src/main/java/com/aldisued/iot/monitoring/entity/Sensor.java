@@ -2,6 +2,8 @@ package com.aldisued.iot.monitoring.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -21,6 +23,7 @@ public class Sensor {
   @Column(nullable = false)
   private String name;
 
+  @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private SensorType type;
 
