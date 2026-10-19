@@ -13,7 +13,7 @@ public class AlertKafkaListener {
     this.alertService = alertService;
   }
 
-  @KafkaListener(topics = {"sensor-alerts"}, groupId = "iot-monitoring")
+  @KafkaListener(topics = KafkaTopics.SENSOR_ALERTS, groupId = "iot-monitoring")
   public void listen(AlertDto alertDto) {
     alertService.saveAlert(alertDto);
   }
